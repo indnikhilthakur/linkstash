@@ -9,14 +9,20 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Record voice notes for quick capture",
+        "NSPhotoLibraryUsageDescription": "Pick images for OCR capture",
+        "NSCameraUsageDescription": "Capture screenshots for notes"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["RECORD_AUDIO", "READ_EXTERNAL_STORAGE", "CAMERA"]
     },
     "web": {
       "bundler": "metro",
