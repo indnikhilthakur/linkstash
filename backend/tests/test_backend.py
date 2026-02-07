@@ -1,6 +1,6 @@
 """
 LinkStash Backend API Tests
-Tests: Health, Auth, Notes CRUD, Link metadata, Text auto-tagging, AI Search, Backup
+Tests: Health, Auth (Google + Email/Password), Notes CRUD, Link metadata, Text auto-tagging, AI Search, Backup
 """
 import pytest
 import requests
