@@ -71,6 +71,15 @@ class SearchQuery(BaseModel):
 class BackupImport(BaseModel):
     notes: List[dict]
 
+class EmailRegister(BaseModel):
+    email: str
+    password: str
+    name: str
+
+class EmailLogin(BaseModel):
+    email: str
+    password: str
+
 # --- Auth Helpers ---
 async def get_current_user(request: Request) -> dict:
     token = None
