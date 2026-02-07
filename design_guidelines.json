@@ -1,0 +1,198 @@
+{
+  "identity": {
+    "persona": "E1 - The Anti-AI Designer",
+    "philosophy": "Functional Brutalism meets Electric Utility. No generic gradients. High contrast. Deep blacks.",
+    "tone": "Cyber-Physical, Intelligent, Raw",
+    "rules": [
+      "No 'Inter' for headings. Use heavy weights.",
+      "No 100% symmetrical grids. Use masonry/staggered layouts.",
+      "Dark mode is not just black (#000000). Use Deep Obsidian (#0A0A0A) + rich grays.",
+      "Primary action color must be electric (Acid Lime), not 'SaaS Blue'."
+    ]
+  },
+  "tokens": {
+    "colors": {
+      "background": "#09090B",
+      "surface": "#18181B",
+      "surfaceHighlight": "#27272A",
+      "border": "#3F3F46",
+      "primary": "#CCFF00",
+      "primaryForeground": "#000000",
+      "secondary": "#7C3AED",
+      "secondaryForeground": "#FFFFFF",
+      "text": {
+        "heading": "#FFFFFF",
+        "body": "#A1A1AA",
+        "muted": "#52525B"
+      },
+      "status": {
+        "success": "#22C55E",
+        "error": "#EF4444",
+        "warning": "#F59E0B",
+        "aiProcessing": "#06B6D4"
+      },
+      "overlay": "rgba(0,0,0,0.85)"
+    },
+    "typography": {
+      "fontFamily": {
+        "heading": "System",
+        "body": "System",
+        "mono": "System"
+      },
+      "weights": {
+        "thin": "100",
+        "regular": "400",
+        "medium": "500",
+        "bold": "700",
+        "black": "900"
+      },
+      "sizes": {
+        "xs": 12,
+        "sm": 14,
+        "base": 16,
+        "lg": 18,
+        "xl": 20,
+        "2xl": 24,
+        "3xl": 30,
+        "4xl": 36,
+        "5xl": 48
+      }
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "2xl": 48,
+      "3xl": 64
+    },
+    "borderRadius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 12,
+      "xl": 16,
+      "full": 9999
+    }
+  },
+  "component_guidelines": {
+    "general": {
+      "description": "All components must use React Native StyleSheet. No inline styles for core layouts.",
+      "safeArea": "Always wrap screen content in SafeAreaView or handle insets manually."
+    },
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#CCFF00",
+        "borderRadius": 9999,
+        "paddingVertical": 16,
+        "paddingHorizontal": 32,
+        "alignItems": "center",
+        "justifyContent": "center",
+        "shadowColor": "#CCFF00",
+        "shadowOffset": { "width": 0, "height": 4 },
+        "shadowOpacity": 0.2,
+        "shadowRadius": 8,
+        "elevation": 5
+      },
+      "primaryText": {
+        "color": "#000000",
+        "fontWeight": "700",
+        "fontSize": 16,
+        "textTransform": "uppercase",
+        "letterSpacing": 1
+      },
+      "icon": {
+        "width": 48,
+        "height": 48,
+        "borderRadius": 24,
+        "backgroundColor": "#27272A",
+        "alignItems": "center",
+        "justifyContent": "center"
+      }
+    },
+    "cards": {
+      "noteCard": {
+        "backgroundColor": "#18181B",
+        "borderRadius": 16,
+        "padding": 16,
+        "marginBottom": 16,
+        "borderWidth": 1,
+        "borderColor": "#27272A",
+        "overflow": "hidden"
+      },
+      "highlight": {
+        "borderWidth": 1,
+        "borderColor": "#CCFF00"
+      }
+    },
+    "inputs": {
+      "textInput": {
+        "backgroundColor": "#27272A",
+        "borderRadius": 12,
+        "padding": 16,
+        "color": "#FFFFFF",
+        "fontSize": 16,
+        "borderWidth": 1,
+        "borderColor": "transparent"
+      },
+      "focus": {
+        "borderColor": "#CCFF00"
+      }
+    },
+    "bottomSheet": {
+      "container": {
+        "position": "absolute",
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "backgroundColor": "#18181B",
+        "borderTopLeftRadius": 32,
+        "borderTopRightRadius": 32,
+        "padding": 24,
+        "paddingBottom": 48,
+        "shadowColor": "#000",
+        "shadowOffset": { "width": 0, "height": -4 },
+        "shadowOpacity": 0.5,
+        "shadowRadius": 12,
+        "elevation": 20
+      }
+    }
+  },
+  "assets": {
+    "images": {
+      "empty_state": {
+        "url": "https://images.unsplash.com/photo-1736325263301-488931888151?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGRhcmslMjBkaWdpdGFsJTIwbm9pc2UlMjBtaW5pbWFsaXN0JTIwZnV0dXJpc3RpY3xlbnwwfHx8fDE3NzA1MDM3NTR8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract Cubes - Use for Empty Notes State"
+      },
+      "search_bg": {
+        "url": "https://images.unsplash.com/photo-1765410845144-91fa68bfc09b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBkaWdpdGFsJTIwbm9pc2UlMjBtaW5pbWFsaXN0JTIwZnV0dXJpc3RpY3xlbnwwfHx8fDE3NzA1MDM3NTR8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Cyan Sound Wave - Use for AI Search / Processing Background"
+      },
+      "voice_visualizer": {
+        "url": "https://images.unsplash.com/photo-1617994452722-4145e196248b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwzfHxuZW9uJTIwdm9pY2UlMjB3YXZlZm9ybSUyMGFic3RyYWN0JTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzcwNTAzNzU1fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Blue Light Wave - Use for Voice Recording Overlay"
+      }
+    },
+    "icons": {
+      "library": "@expo/vector-icons",
+      "preferred_set": "Feather",
+      "fallback_set": "Ionicons"
+    }
+  },
+  "universal_guidelines": [
+    "Use 'SafeAreaView' from 'react-native-safe-area-context' for all screens.",
+    "Do not use generic 'Button' component. Build custom TouchableOpacity with the styles provided.",
+    "For the Masonry Layout: Split the notes data into two arrays (even/odd indices) and render two side-by-side Columns inside a ScrollView.",
+    "Voice Note Recording: Use the 'voice_visualizer' image as a background with opacity when recording is active.",
+    "Accessibility: Ensure all TouchableOpacity elements have 'accessibilityLabel' and 'accessibilityRole'.",
+    "Testing: Add 'testID' to all interactive elements (buttons, inputs, list items) using kebab-case (e.g., 'save-note-btn')."
+  ],
+  "instructions_to_main_agent": [
+    "1. Setup: Ensure 'react-native-safe-area-context' and 'expo-image' are correctly used.",
+    "2. Theme: Apply the Dark Mode colors globally. There is no Light Mode toggle for MVP.",
+    "3. Navigation: Use Expo Router. Create a Stack layout. Hiding header on 'Home' might look cleaner.",
+    "4. Components: Create a 'ThemedText' and 'ThemedView' wrapper if helpful, but sticking to StyleSheet objects is fine.",
+    "5. Masonry Grid: Implement a custom 2-column view logic for the notes feed to achieve the 'Pinterest' look.",
+    "6. AI Features: When AI is generating metadata, show a subtle pulsing animation on the card using Animated API."
+  ]
+}
