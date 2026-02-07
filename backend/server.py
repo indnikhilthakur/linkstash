@@ -565,7 +565,7 @@ async def import_backup(backup: BackupImport, request: Request):
 # --- Metadata Route ---
 @api_router.post("/metadata/extract")
 async def extract_metadata(request: Request):
-    user = await get_current_user(request)
+    await get_current_user(request)
     body = await request.json()
     url = body.get("url", "")
     if not url:
