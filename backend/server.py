@@ -340,6 +340,83 @@ async def logout(request: Request, response: Response):
     response.delete_cookie("session_token", path="/")
     return {"message": "Logged out"}
 
+# --- Email/Password Auth Routes ---
+@api_router.post("/auth/register")
+async def register_email(data: EmailRegister, response: Response):
+    email = data.email.strip().lower()
+    name = data.name.strip()
+    password = data.password
+
+    if not email or not password or not name:
+        raise HTTPException(status_code=400, detail="Email, password, and name are required")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+
+    await db.users.insert_one({
+        "user_id": user_id,
+        "email": email,
+        "name": name,
+        "picture": "",
+        "password_hash": hashed,
+        "auth_provider": "email",
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    session_token = f"sess_{uuid.uuid4().hex}"
+    await db.user_sessions.insert_one({
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    response.set_cookie(
+        key="session_token", value=session_token,
+        httponly=True, secure=True, samesite="none", path="/", max_age=7*24*3600
+    )
+    return {"user_id": user_id, "email": email, "name": name, "picture": "", "session_token": session_token}
+
+@api_router.post("/auth/login")
+async def login_email(data: EmailLogin, response: Response):
+    email = data.email.strip().lower()
+    password = data.password
+
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    stored_hash = user.get("password_hash", "")
+    if not stored_hash:
+        raise HTTPException(status_code=401, detail="This account uses Google login. Please sign in with Google.")
+
+    if not bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    session_token = f"sess_{uuid.uuid4().hex}"
+    await db.user_sessions.insert_one({
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    response.set_cookie(
+        key="session_token", value=session_token,
+        httponly=True, secure=True, samesite="none", path="/", max_age=7*24*3600
+    )
+    return {
+        "user_id": user["user_id"], "email": user["email"],
+        "name": user["name"], "picture": user.get("picture", ""),
+        "session_token": session_token
+    }
+
 # --- Notes Routes ---
 @api_router.post("/notes")
 async def create_note(note_data: NoteCreate, request: Request):
