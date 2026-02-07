@@ -100,6 +100,182 @@ class TestAuth:
         assert "message" in data, "Response missing 'message'"
         print(f"✓ Logout successful: {data['message']}")
 
+# --- Email/Password Auth Tests ---
+class TestEmailAuth:
+    """Email/password authentication tests (NEW feature)"""
+    
+    def test_email_register_success(self, api_client):
+        """Test POST /api/auth/register creates new user and returns session token"""
+        # Use unique email with timestamp to avoid conflicts
+        unique_email = f"test_register_{int(time.time())}@example.com"
+        payload = {
+            "email": unique_email,
+            "password": "testpass123",
+            "name": "Test Email User"
+        }
+        
+        response = api_client.post(f"{BASE_URL}/api/auth/register", json=payload)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        
+        data = response.json()
+        assert "user_id" in data, "Response missing 'user_id'"
+        assert "email" in data, "Response missing 'email'"
+        assert "name" in data, "Response missing 'name'"
+        assert "session_token" in data, "Response missing 'session_token'"
+        assert data["email"] == unique_email.lower(), "Email should be lowercase"
+        assert data["name"] == "Test Email User", "Name mismatch"
+        assert data["session_token"].startswith("sess_"), "Session token should start with sess_"
+        
+        # Store for next test
+        self.registered_email = unique_email
+        self.registered_password = "testpass123"
+        self.session_token = data["session_token"]
+        
+        print(f"✓ Email registration successful: {data['email']}, session_token: {data['session_token'][:20]}...")
+        
+        # Verify session token works with /api/auth/me
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.session_token}"
+        }
+        me_response = api_client.get(f"{BASE_URL}/api/auth/me", headers=headers)
+        assert me_response.status_code == 200, f"Session token should work with /api/auth/me"
+        me_data = me_response.json()
+        assert me_data["email"] == unique_email.lower(), "Email should match in /me endpoint"
+        print(f"✓ Session token validated with /api/auth/me")
+    
+    def test_email_register_duplicate_409(self, api_client):
+        """Test POST /api/auth/register with duplicate email returns 409"""
+        # First register a user
+        unique_email = f"test_duplicate_{int(time.time())}@example.com"
+        payload = {
+            "email": unique_email,
+            "password": "password123",
+            "name": "First User"
+        }
+        
+        first_response = api_client.post(f"{BASE_URL}/api/auth/register", json=payload)
+        assert first_response.status_code == 200, "First registration should succeed"
+        print(f"✓ First registration successful: {unique_email}")
+        
+        # Try to register same email again
+        duplicate_payload = {
+            "email": unique_email,
+            "password": "different_password",
+            "name": "Second User"
+        }
+        
+        duplicate_response = api_client.post(f"{BASE_URL}/api/auth/register", json=duplicate_payload)
+        assert duplicate_response.status_code == 409, f"Expected 409 for duplicate email, got {duplicate_response.status_code}"
+        
+        error_data = duplicate_response.json()
+        assert "detail" in error_data, "Error response should have 'detail' field"
+        assert "already registered" in error_data["detail"].lower(), f"Error message should mention 'already registered', got: {error_data['detail']}"
+        print(f"✓ Duplicate email correctly rejected with 409: {error_data['detail']}")
+    
+    def test_email_login_success(self, api_client):
+        """Test POST /api/auth/login with valid credentials returns session token"""
+        # First register a user
+        unique_email = f"test_login_{int(time.time())}@example.com"
+        register_payload = {
+            "email": unique_email,
+            "password": "mypassword456",
+            "name": "Login Test User"
+        }
+        
+        reg_response = api_client.post(f"{BASE_URL}/api/auth/register", json=register_payload)
+        assert reg_response.status_code == 200, "Registration should succeed"
+        print(f"✓ User registered: {unique_email}")
+        
+        # Now login with same credentials
+        login_payload = {
+            "email": unique_email,
+            "password": "mypassword456"
+        }
+        
+        login_response = api_client.post(f"{BASE_URL}/api/auth/login", json=login_payload)
+        assert login_response.status_code == 200, f"Expected 200, got {login_response.status_code}: {login_response.text}"
+        
+        data = login_response.json()
+        assert "user_id" in data, "Response missing 'user_id'"
+        assert "email" in data, "Response missing 'email'"
+        assert "name" in data, "Response missing 'name'"
+        assert "session_token" in data, "Response missing 'session_token'"
+        assert data["email"] == unique_email.lower(), "Email should match"
+        assert data["name"] == "Login Test User", "Name should match"
+        assert data["session_token"].startswith("sess_"), "Session token should start with sess_"
+        
+        print(f"✓ Email login successful: {data['email']}, session_token: {data['session_token'][:20]}...")
+        
+        # Verify session token works
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {data['session_token']}"
+        }
+        me_response = api_client.get(f"{BASE_URL}/api/auth/me", headers=headers)
+        assert me_response.status_code == 200, "Session token should work"
+        print(f"✓ Login session token validated with /api/auth/me")
+    
+    def test_email_login_wrong_password_401(self, api_client):
+        """Test POST /api/auth/login with wrong password returns 401"""
+        # First register a user
+        unique_email = f"test_wrong_pass_{int(time.time())}@example.com"
+        register_payload = {
+            "email": unique_email,
+            "password": "correct_password",
+            "name": "Password Test User"
+        }
+        
+        reg_response = api_client.post(f"{BASE_URL}/api/auth/register", json=register_payload)
+        assert reg_response.status_code == 200, "Registration should succeed"
+        print(f"✓ User registered: {unique_email}")
+        
+        # Try to login with wrong password
+        wrong_login_payload = {
+            "email": unique_email,
+            "password": "wrong_password"
+        }
+        
+        wrong_response = api_client.post(f"{BASE_URL}/api/auth/login", json=wrong_login_payload)
+        assert wrong_response.status_code == 401, f"Expected 401 for wrong password, got {wrong_response.status_code}"
+        
+        error_data = wrong_response.json()
+        assert "detail" in error_data, "Error response should have 'detail' field"
+        assert "invalid" in error_data["detail"].lower(), f"Error message should mention 'invalid', got: {error_data['detail']}"
+        print(f"✓ Wrong password correctly rejected with 401: {error_data['detail']}")
+    
+    def test_email_login_nonexistent_email_401(self, api_client):
+        """Test POST /api/auth/login with non-existent email returns 401"""
+        nonexistent_payload = {
+            "email": f"nonexistent_{int(time.time())}@example.com",
+            "password": "anypassword123"
+        }
+        
+        response = api_client.post(f"{BASE_URL}/api/auth/login", json=nonexistent_payload)
+        assert response.status_code == 401, f"Expected 401 for non-existent email, got {response.status_code}"
+        
+        error_data = response.json()
+        assert "detail" in error_data, "Error response should have 'detail' field"
+        assert "invalid" in error_data["detail"].lower(), f"Error message should mention 'invalid', got: {error_data['detail']}"
+        print(f"✓ Non-existent email correctly rejected with 401: {error_data['detail']}")
+    
+    def test_email_register_validation_errors(self, api_client):
+        """Test POST /api/auth/register validates required fields and password length"""
+        # Test short password
+        short_pass_payload = {
+            "email": f"test_short_{int(time.time())}@example.com",
+            "password": "12345",  # Only 5 chars, need 6
+            "name": "Test User"
+        }
+        
+        response = api_client.post(f"{BASE_URL}/api/auth/register", json=short_pass_payload)
+        assert response.status_code == 400, f"Expected 400 for short password, got {response.status_code}"
+        
+        error_data = response.json()
+        assert "detail" in error_data, "Error response should have 'detail'"
+        assert "6 characters" in error_data["detail"], f"Error should mention password length, got: {error_data['detail']}"
+        print(f"✓ Short password rejected with 400: {error_data['detail']}")
+
 # --- Notes CRUD Tests ---
 class TestNotesCRUD:
     """Notes CRUD operations with persistence verification"""
