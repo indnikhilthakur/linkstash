@@ -13,8 +13,8 @@ BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
     raise ValueError("EXPO_PUBLIC_BACKEND_URL environment variable not set")
 
-# Test session token (created via MongoDB)
-TEST_SESSION_TOKEN = "test_session_1770507150408"
+# Test session token (created via MongoDB - persistent session for testing)
+TEST_SESSION_TOKEN = "test_session_persistent_1770507150408"
 TEST_USER_ID = "test-user-1770507150408"
 
 @pytest.fixture
