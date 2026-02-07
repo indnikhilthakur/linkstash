@@ -68,9 +68,32 @@ class TestAuth:
         assert response.status_code == 401, f"Expected 401, got {response.status_code}"
         print("✓ Auth /me correctly rejects unauthenticated request")
     
-    def test_logout(self, api_client, auth_headers):
-        """Test POST /api/auth/logout"""
-        response = api_client.post(f"{BASE_URL}/api/auth/logout", headers=auth_headers)
+    def test_logout(self, api_client):
+        """Test POST /api/auth/logout with temporary session"""
+        # Create a temporary session just for logout test
+        import subprocess
+        result = subprocess.run([
+            "mongosh", "--quiet", "--eval",
+            """
+            use('test_database');
+            var tempToken = 'temp_logout_session_' + Date.now();
+            db.user_sessions.insertOne({
+                user_id: 'test-user-1770507150408',
+                session_token: tempToken,
+                expires_at: new Date(Date.now() + 7*24*60*60*1000),
+                created_at: new Date()
+            });
+            print(tempToken);
+            """
+        ], capture_output=True, text=True)
+        temp_token = result.stdout.strip().split('\n')[-1]
+        
+        # Test logout with temporary token
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {temp_token}"
+        }
+        response = api_client.post(f"{BASE_URL}/api/auth/logout", headers=headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         
         data = response.json()
