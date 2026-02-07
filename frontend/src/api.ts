@@ -29,6 +29,38 @@ export async function exchangeSession(sessionId: string) {
   return data;
 }
 
+export async function registerEmail(email: string, password: string, name: string) {
+  const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, name }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Registration failed');
+  }
+  const data = await res.json();
+  await AsyncStorage.setItem('session_token', data.session_token);
+  return data;
+}
+
+export async function loginEmail(email: string, password: string) {
+  const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Login failed');
+  }
+  const data = await res.json();
+  await AsyncStorage.setItem('session_token', data.session_token);
+  return data;
+}
+
 export async function getMe() {
   const headers = await authHeaders();
   const res = await fetch(`${BACKEND_URL}/api/auth/me`, { headers, credentials: 'include' });
