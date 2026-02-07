@@ -15,6 +15,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import httpx
 from bs4 import BeautifulSoup
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
