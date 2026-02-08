@@ -17,6 +17,7 @@ import httpx
 import jwt
 from bs4 import BeautifulSoup
 import bcrypt
+from llm import LLMClient
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,9 +27,6 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# LLM key
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
-
 # JWT auth
 JWT_SECRET = os.environ.get("JWT_SECRET", "")
 JWT_ISSUER = os.environ.get("JWT_ISSUER", "linkstash")
@@ -36,6 +34,9 @@ JWT_AUDIENCE = os.environ.get("JWT_AUDIENCE", "linkstash")
 JWT_EXP_MINUTES = int(os.environ.get("JWT_EXP_MINUTES", "60"))
 if not JWT_SECRET:
     raise RuntimeError("JWT_SECRET is required for auth")
+
+# LLM client
+llm = LLMClient()
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -196,14 +197,6 @@ async def scrape_url_metadata(url: str) -> dict:
 async def generate_ai_metadata(title: str, description: str, url: str = "", raw_content: str = "") -> dict:
     """Use GPT to generate summary and tags"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"metadata-{uuid.uuid4().hex[:8]}",
-            system_message="You are a metadata extraction assistant. Given content about a link or note, generate a concise summary (2-3 sentences) and 3-5 relevant tags. Respond ONLY in valid JSON format: {\"summary\": \"...\", \"tags\": [\"tag1\", \"tag2\"]}"
-        ).with_model("openai", "gpt-4.1-mini")
-        
         content_parts = []
         if title:
             content_parts.append(f"Title: {title}")
@@ -215,21 +208,7 @@ async def generate_ai_metadata(title: str, description: str, url: str = "", raw_
             content_parts.append(f"Content: {raw_content[:1000]}")
         
         content = "\n".join(content_parts)
-        msg = UserMessage(text=f"Generate summary and tags for:\n{content}")
-        response = await chat.send_message(msg)
-        
-        # Parse JSON response
-        response_text = response.strip()
-        if response_text.startswith("```"):
-            response_text = response_text.split("```")[1]
-            if response_text.startswith("json"):
-                response_text = response_text[4:]
-        
-        result = json.loads(response_text)
-        return {
-            "summary": result.get("summary", ""),
-            "tags": result.get("tags", [])[:5]
-        }
+        return await llm.generate_summary_and_tags(content)
     except Exception as e:
         logger.error(f"AI metadata generation failed: {e}")
         return {"summary": description[:200] if description else "", "tags": []}
@@ -237,9 +216,6 @@ async def generate_ai_metadata(title: str, description: str, url: str = "", raw_
 async def transcribe_audio(audio_base64: str) -> str:
     """Transcribe audio using Whisper"""
     try:
-        from emergentintegrations.llm.openai import OpenAISpeechToText
-        
-        stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
         audio_bytes = base64.b64decode(audio_base64)
         
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
@@ -248,12 +224,7 @@ async def transcribe_audio(audio_base64: str) -> str:
         
         try:
             with open(tmp_path, "rb") as audio_file:
-                response = await stt.transcribe(
-                    file=audio_file,
-                    model="whisper-1",
-                    response_format="json"
-                )
-            return response.text
+                return await llm.transcribe_audio(audio_file)
         finally:
             os.unlink(tmp_path)
     except Exception as e:
@@ -263,24 +234,7 @@ async def transcribe_audio(audio_base64: str) -> str:
 async def extract_image_text(image_base64: str) -> str:
     """Extract text from image using GPT vision"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
-        
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"ocr-{uuid.uuid4().hex[:8]}",
-            system_message="You are an OCR assistant. Extract all readable text and describe the key content from the image. Be concise."
-        ).with_model("openai", "gpt-4.1-mini")
-        
-        file_content = FileContent(
-            content_type="image/jpeg",
-            file_content_base64=image_base64
-        )
-        msg = UserMessage(
-            text="Extract text and describe key content from this image.",
-            file_contents=[file_content]
-        )
-        response = await chat.send_message(msg)
-        return response.strip()
+        return await llm.extract_image_text(image_base64)
     except Exception as e:
         logger.error(f"Image OCR failed: {e}")
         return ""
@@ -511,31 +465,12 @@ async def search_notes(search: SearchQuery, request: Request):
         if not all_notes:
             return {"notes": []}
         
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
         # Build notes summary for AI
         notes_summary = []
         for i, n in enumerate(all_notes):
             notes_summary.append(f"{i}: {n.get('title','')} | {n.get('summary','')} | tags: {','.join(n.get('tags',[]))}")
-        
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"search-{uuid.uuid4().hex[:8]}",
-            system_message="You are a search assistant. Given a user query and a list of notes, return the indices of the most relevant notes. Respond ONLY with a JSON array of indices like [0, 3, 5]. If none match, return []."
-        ).with_model("openai", "gpt-4.1-mini")
-        
-        msg = UserMessage(
-            text=f"Query: {query_text}\n\nNotes:\n" + "\n".join(notes_summary[:50])
-        )
-        response = await chat.send_message(msg)
-        
-        response_text = response.strip()
-        if response_text.startswith("```"):
-            response_text = response_text.split("```")[1]
-            if response_text.startswith("json"):
-                response_text = response_text[4:]
-        
-        indices = json.loads(response_text)
+
+        indices = await llm.select_relevant_indices(query_text, notes_summary[:50])
         results = [all_notes[i] for i in indices if 0 <= i < len(all_notes)]
         return {"notes": results}
     except Exception as e:
