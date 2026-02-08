@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../src/auth';
-import { exchangeSession, registerEmail, loginEmail } from '../src/api';
+import { registerEmail, loginEmail } from '../src/api';
 import { colors, spacing, fontSize, borderRadius } from '../src/theme';
 
 export default function LoginScreen() {
@@ -21,46 +21,11 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  // Check for session_id in URL hash (after Google Auth redirect)
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const hash = window.location.hash;
-      if (hash && hash.includes('session_id=')) {
-        const sessionId = hash.split('session_id=')[1]?.split('&')[0];
-        if (sessionId) {
-          handleSessionExchange(sessionId);
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      }
-    }
-  }, []);
-
   useEffect(() => {
     if (!loading && user) {
       router.replace('/(tabs)/home');
     }
   }, [user, loading]);
-
-  const handleSessionExchange = async (sessionId: string) => {
-    setAuthLoading(true);
-    try {
-      const userData = await exchangeSession(sessionId);
-      setUser({ user_id: userData.user_id, email: userData.email, name: userData.name, picture: userData.picture });
-      router.replace('/(tabs)/home');
-    } catch (e) {
-      console.error('Auth exchange failed:', e);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = () => {
-    if (Platform.OS === 'web') {
-      // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-      const redirectUrl = window.location.origin + '/';
-      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-    }
-  };
 
   const handleEmailSubmit = async () => {
     setError('');
@@ -137,24 +102,6 @@ export default function LoginScreen() {
                     <Text style={styles.featureText}>{f.text}</Text>
                   </View>
                 ))}
-              </View>
-
-              {/* Google Login */}
-              <TouchableOpacity
-                testID="google-login-btn"
-                style={styles.googleBtn}
-                onPress={handleGoogleLogin}
-                activeOpacity={0.8}
-              >
-                <Feather name="log-in" size={20} color={colors.primaryForeground} />
-                <Text style={styles.googleBtnText}>Sign in with Google</Text>
-              </TouchableOpacity>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
               </View>
 
               {/* Email Login Button */}
@@ -242,24 +189,6 @@ export default function LoginScreen() {
                   <Text style={styles.toggleLink}>
                     {isSignUp ? 'Sign In' : 'Sign Up'}
                   </Text>
-                </TouchableOpacity>
-
-                {/* Divider */}
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>or</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Google Login (secondary) */}
-                <TouchableOpacity
-                  testID="google-login-secondary-btn"
-                  style={styles.emailToggleBtn}
-                  onPress={handleGoogleLogin}
-                  activeOpacity={0.8}
-                >
-                  <Feather name="log-in" size={18} color={colors.text.heading} />
-                  <Text style={styles.emailToggleText}>Sign in with Google</Text>
                 </TouchableOpacity>
 
                 {/* Back to main */}

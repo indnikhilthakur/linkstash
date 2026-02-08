@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      const token = await AsyncStorage.getItem('session_token');
+      const token = await AsyncStorage.getItem('access_token');
       if (!token) {
         setUser(null);
         setLoading(false);
@@ -41,14 +41,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
     } catch {
       setUser(null);
-      await AsyncStorage.removeItem('session_token');
+      await AsyncStorage.removeItem('access_token');
     } finally {
       setLoading(false);
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.removeItem('session_token');
+    await AsyncStorage.removeItem('access_token');
     setUser(null);
   }, []);
 
