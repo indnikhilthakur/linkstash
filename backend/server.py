@@ -22,10 +22,17 @@ from llm import LLMClient
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+def require_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
+
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = require_env("MONGO_URL")
+db_name = require_env("DB_NAME")
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
 
 # JWT auth
 JWT_SECRET = os.environ.get("JWT_SECRET", "")
@@ -550,3 +557,12 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+@app.on_event("startup")
+async def startup_db_client():
+    try:
+        await client.admin.command("ping")
+        logger.info("MongoDB connection established")
+    except Exception as e:
+        logger.error(f"MongoDB connection failed: {e}")
+        raise RuntimeError("Failed to connect to MongoDB. Check MONGO_URL/DB_NAME.") from e
